@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Wird — A minimalist Islamic habit tracker for Android. Schedule your spiritual habits around the five daily prayers. Free, offline, private.">
+  <title>Wird — Islamic Habit Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #0D1B2A;
+      color: #F0EDE6;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Variables ──────────────────────────────────────── */
+    :root {
+      --bg:        #0D1B2A;
+      --surface:   #132236;
+      --border:    #1E3148;
+      --gold:      #C9A84C;
+      --gold-l:    #E8C96E;
+      --gold-d:    #8B6914;
+      --tp:        #F0EDE6;
+      --ts:        #8A9BB0;
+      --tm:        #6B7F94;
+      --green:     #3FB950;
+      --glow:      0 0 24px rgba(201,168,76,.15);
+      --w:         1100px;
+    }
+
+    /* ── Layout helpers ─────────────────────────────────── */
+    .container { max-width: var(--w); margin: 0 auto; padding: 0 24px; }
+    section { padding: 88px 0; }
+
+    /* ── Scroll reveal ──────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+
+    /* ── Typography helpers ─────────────────────────────── */
+    .sec-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .sec-h { font-size: clamp(28px,4vw,42px); font-weight: 700; line-height: 1.15; }
+    .sec-sub { font-size: 18px; color: var(--tm); margin-top: 8px; }
+
+    /* ════════════════════════════════════════════════════
+       NAV
+    ════════════════════════════════════════════════════ */
+    nav {
+      position: fixed; inset: 0 0 auto;
+      z-index: 200;
+      height: 64px;
+      display: flex; align-items: center;
+      background: rgba(13,27,42,.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      width: 100%; max-width: var(--w);
+      margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 20px; font-weight: 700;
+      color: var(--gold); text-decoration: none; letter-spacing: -.02em;
+    }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a {
+      color: var(--ts); text-decoration: none;
+      font-size: 15px; font-weight: 500;
+      position: relative; transition: color .2s;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -2px; left: 0;
+      width: 0; height: 1.5px; background: var(--gold);
+      transition: width .2s ease;
+    }
+    .nav-links a:hover { color: var(--tp); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-cta {
+      background: var(--gold); color: #0D1B2A;
+      padding: 8px 18px; border-radius: 100px;
+      font-size: 14px; font-weight: 700;
+      text-decoration: none;
+      transition: filter .2s, transform .2s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+    /* hamburger */
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 6px;
+    }
+    .hamburger span {
+      display: block; width: 24px; height: 2px;
+      background: var(--gold); border-radius: 2px;
+      transition: transform .28s ease, opacity .28s ease;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* mobile overlay */
+    #mobile-menu {
+      position: fixed; inset: 64px 0 0;
+      z-index: 199;
+      background: rgba(13,27,42,.97);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 36px;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-10px);
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    #mobile-menu.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+    #mobile-menu a {
+      color: var(--tp); font-size: 26px; font-weight: 500;
+      text-decoration: none; transition: color .2s;
+    }
+    #mobile-menu a:hover { color: var(--gold); }
+
+    /* ════════════════════════════════════════════════════
+       HERO
+    ════════════════════════════════════════════════════ */
+    #hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding-top: 64px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center;
+    }
+    .hero-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 20px;
+    }
+    .hero-h1 {
+      font-size: clamp(36px,5vw,62px);
+      font-weight: 700; line-height: 1.08;
+      letter-spacing: -.025em;
+      margin-bottom: 16px;
+    }
+    .hero-sub {
+      font-size: 18px; font-weight: 500;
+      color: var(--ts); margin-bottom: 14px;
+    }
+    .hero-body {
+      font-size: 16px; color: var(--ts);
+      max-width: 480px; line-height: 1.75;
+      margin-bottom: 32px;
+    }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--gold); color: #0D1B2A;
+      height: 52px; padding: 0 22px; border-radius: 14px;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+      white-space: nowrap;
+      transition: filter .2s, transform .15s;
+    }
+    .btn-primary:hover { filter: brightness(1.08); transform: scale(1.02); }
+    .btn-secondary {
+      display: inline-flex; align-items: center;
+      height: 52px; padding: 0 22px; border-radius: 14px;
+      border: 1.5px solid var(--gold); color: var(--gold);
+      font-size: 15px; font-weight: 500; text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-secondary:hover { background: rgba(201,168,76,.09); }
+
+    .hero-trust { font-size: 13px; color: var(--tm); }
+
+    /* Phone mockup */
+    .phone-wrap { display: flex; justify-content: center; align-items: center; }
+    .phone {
+      position: relative;
+      width: 264px; height: 530px;
+      background: #071422;
+      border-radius: 44px;
+      border: 2.5px solid #233650;
+      box-shadow:
+        0 0 0 6px #0D1B2A,
+        0 0 0 8.5px #1a2e44,
+        0 32px 72px rgba(0,0,0,.55),
+        0 0 80px rgba(201,168,76,.13);
+      animation: float 4s ease-in-out infinite;
+      overflow: hidden;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    /* notch */
+    .phone::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 86px; height: 26px;
+      background: #071422;
+      border-radius: 0 0 18px 18px;
+      z-index: 5;
+    }
+    .phone-screen {
+      position: absolute; inset: 12px 9px;
+      background: #0D1B2A;
+      border-radius: 36px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      padding: 36px 14px 14px;
+    }
+    .ps-time { font-size: 10px; color: var(--tm); text-align: right; margin-bottom: 12px; }
+    .ps-prayer { text-align: center; margin-bottom: 12px; }
+    .ps-prayer-name { font-size: 20px; font-weight: 700; color: var(--gold); }
+    .ps-prayer-time { font-size: 11px; color: var(--tm); margin-top: 1px; }
+    .ps-divider { height: 1px; background: var(--border); margin-bottom: 12px; }
+    .ps-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 11px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 7px;
+    }
+    .ps-cb {
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 1.5px solid var(--gold); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ps-cb.done { background: var(--gold); border-color: var(--gold); }
+    .ps-cb.done::after {
+      content: '';
+      display: block;
+      width: 10px; height: 6px;
+      border-left: 2px solid #0D1B2A;
+      border-bottom: 2px solid #0D1B2A;
+      transform: rotate(-45deg) translateY(-1px);
+    }
+    .ps-habit-name { font-size: 11px; font-weight: 600; color: var(--tp); }
+    .ps-habit-sub  { font-size: 9px; color: var(--tm); margin-top: 1px; }
+    .ps-dots {
+      margin-top: auto; display: flex;
+      justify-content: center; gap: 6px; padding-top: 10px;
+    }
+    .ps-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border);
+    }
+    .ps-dots span.act { background: var(--gold); width: 18px; border-radius: 3px; }
+
+    /* ════════════════════════════════════════════════════
+       FEATURES
+    ════════════════════════════════════════════════════ */
+    #features { background: var(--bg); }
+    .feat-header { text-align: center; margin-bottom: 48px; }
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 20px;
+    }
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 26px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .feat-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: var(--glow);
+    }
+    .feat-icon { width: 40px; height: 40px; color: var(--gold); margin-bottom: 16px; }
+    .feat-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feat-body  { font-size: 14px; color: var(--ts); line-height: 1.65; }
+
+    /* ════════════════════════════════════════════════════
+       HOW IT WORKS
+    ════════════════════════════════════════════════════ */
+    #how { background: var(--bg); }
+    .how-header { text-align: center; margin-bottom: 56px; }
+    .steps {
+      display: flex; align-items: flex-start;
+    }
+    .step { flex: 1; text-align: center; padding: 0 20px; }
+    .step-num {
+      font-size: 52px; font-weight: 700;
+      color: var(--gold); line-height: 1; margin-bottom: 16px;
+    }
+    .step-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .step-body  { font-size: 14px; color: var(--ts); line-height: 1.65; }
+    .step-sep {
+      width: 56px; flex-shrink: 0;
+      border-top: 1.5px dashed var(--gold-d);
+      margin-top: 34px;
+    }
+
+    /* ════════════════════════════════════════════════════
+       PRO
+    ════════════════════════════════════════════════════ */
+    #pro { background: var(--bg); }
+    .pro-card {
+      max-width: 560px; margin: 0 auto;
+      background: var(--surface);
+      border: 1.5px solid var(--gold);
+      border-radius: 20px; padding: 44px 40px;
+      text-align: center;
+      box-shadow: var(--glow);
+    }
+    .pro-crown { width: 48px; height: 48px; color: var(--gold); margin: 0 auto 16px; }
+    .pro-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 12px;
+    }
+    .pro-h { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .pro-price { font-size: 15px; font-style: italic; color: var(--tm); margin-bottom: 28px; }
+    .pro-list { list-style: none; margin-bottom: 28px; text-align: left; }
+    .pro-list li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 0; font-size: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pro-list li:last-child { border-bottom: none; }
+    .pro-check { color: var(--gold); flex-shrink: 0; }
+    .btn-pro {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 52px;
+      background: var(--gold); color: #0D1B2A;
+      border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      cursor: pointer; margin-bottom: 12px;
+      transition: filter .2s, transform .15s;
+    }
+    .btn-pro:hover { filter: brightness(1.08); transform: scale(1.02); }
+    .pro-foot { font-size: 13px; color: var(--tm); }
+
+    /* ════════════════════════════════════════════════════
+       PRIVACY
+    ════════════════════════════════════════════════════ */
+    #privacy { background: var(--bg); }
+    .priv-header { text-align: center; margin-bottom: 48px; }
+    .priv-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .priv-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px 24px; text-align: center;
+    }
+    .priv-val  { font-size: 34px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+    .priv-lbl  { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--tm); margin-bottom: 10px; }
+    .priv-desc { font-size: 13px; font-style: italic; color: var(--tm); line-height: 1.6; }
+
+    /* ════════════════════════════════════════════════════
+       VERSE
+    ════════════════════════════════════════════════════ */
+    #verse { padding: 80px 0; text-align: center; }
+    .arabic {
+      font-family: 'Noto Naskh Arabic', serif;
+      font-size: 30px; color: var(--gold);
+      direction: rtl; line-height: 2.2;
+      margin-bottom: 20px;
+    }
+    .verse-tr {
+      font-size: 15px; font-style: italic;
+      color: var(--tm); line-height: 1.9;
+    }
+
+    /* ════════════════════════════════════════════════════
+       DOWNLOAD CTA
+    ════════════════════════════════════════════════════ */
+    #download { padding: 80px 0; }
+    .dl-card {
+      background: var(--surface);
+      border-radius: 16px;
+      border-left: 4px solid var(--gold);
+      padding: 52px 40px;
+      text-align: center;
+    }
+    .dl-h   { font-size: clamp(24px,3vw,36px); font-weight: 700; margin-bottom: 10px; }
+    .dl-sub { font-size: 17px; color: var(--tm); margin-bottom: 28px; }
+    .dl-meta { font-size: 12px; color: var(--tm); margin-top: 16px; letter-spacing: .05em; }
+
+    /* ════════════════════════════════════════════════════
+       FOOTER
+    ════════════════════════════════════════════════════ */
+    footer {
+      background: #0A1520;
+      border-top: 1px solid var(--border);
+      padding: 52px 0 0;
+    }
+    .foot-main {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 32px; align-items: start; margin-bottom: 40px;
+    }
+    .foot-brand { font-size: 22px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+    .foot-tag   { font-size: 13px; color: var(--tm); }
+    .foot-links { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+    .foot-links a { color: var(--ts); text-decoration: none; font-size: 14px; transition: color .2s; }
+    .foot-links a:hover { color: var(--gold); }
+    .foot-r { text-align: right; font-size: 13px; color: var(--tm); }
+    .foot-bar {
+      border-top: 1px solid var(--border);
+      padding: 16px 0; text-align: center;
+      font-size: 12px; color: var(--tm);
+    }
+
+    /* ════════════════════════════════════════════════════
+       RESPONSIVE — TABLET (≤1023px)
+    ════════════════════════════════════════════════════ */
+    @media (max-width: 1023px) {
+      .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 52px; }
+      .hero-body { max-width: 560px; margin-left: auto; margin-right: auto; }
+      .hero-btns { justify-content: center; }
+      .phone-wrap { order: -1; }
+      .phone { width: 230px; height: 460px; }
+      .feat-grid { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* ════════════════════════════════════════════════════
+       RESPONSIVE — MOBILE (≤767px)
+    ════════════════════════════════════════════════════ */
+    @media (max-width: 767px) {
+      section { padding: 64px 0; }
+
+      /* nav */
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+
+      /* hero */
+      #hero { padding-top: 80px; min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero-h1 { font-size: 36px; }
+      .hero-btns { flex-direction: column; }
+      .btn-primary, .btn-secondary {
+        width: 100%; justify-content: center;
+        min-height: 52px;
+      }
+
+      /* features */
+      .feat-grid { grid-template-columns: 1fr; }
+
+      /* how it works */
+      .steps { flex-direction: column; gap: 36px; }
+      .step { padding: 0; }
+      .step-sep { display: none; }
+
+      /* privacy */
+      .priv-grid { grid-template-columns: 1fr; }
+
+      /* pro */
+      .pro-card { padding: 30px 20px; }
+
+      /* download */
+      .dl-card { padding: 40px 20px; }
+
+      /* footer */
+      .foot-main { grid-template-columns: 1fr; text-align: center; }
+      .foot-r { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Wird</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pro">Pro</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="https://play.google.com/store/apps/details?id=io.wird.app">Download</a></li>
+    </ul>
+    <a href="https://play.google.com/store/apps/details?id=io.wird.app" class="nav-cta">Download</a>
+    <button class="hamburger" id="ham" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ MOBILE MENU ═════════════════════════════════════ -->
+<div id="mobile-menu">
+  <a href="#features" class="m-link">Features</a>
+  <a href="#pro"      class="m-link">Pro</a>
+  <a href="#privacy"  class="m-link">Privacy</a>
+  <a href="https://play.google.com/store/apps/details?id=io.wird.app" class="m-link">Download</a>
+</div>
+
+<!-- ═══ HERO ════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left: copy -->
+      <div class="hero-text reveal">
+        <div class="hero-label">✦ Sunnah Habit Tracker</div>
+        <h1 class="hero-h1">Your habits,<br>anchored to prayer.</h1>
+        <p class="hero-sub">Every habit has a hadith behind it.</p>
+        <p class="hero-body">
+          Wird gives you the Prophet's ﷺ daily routine — habit by habit, prayer by prayer. Every built-in habit comes with its hadith and source. Scheduled around all six prayer times, fully offline, with no account and no ads. Ever.
+        </p>
+        <div class="hero-btns">
+          <a href="https://play.google.com/store/apps/details?id=io.wird.app" class="btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3.18 23.76c.26.14.56.22.88.22.4 0 .8-.11 1.14-.32l13.3-7.48-3.06-3.06-12.26 10.64zm-.72-21.56c-.08.22-.13.46-.13.72v18.16c0 .26.05.5.13.72l.06.06 10.18-10.18v-.24L2.52 2.14l-.06.06zM21.6 10.4l-2.9-1.64-3.28 3.28 3.28 3.28 2.92-1.64c.84-.48.84-1.8-.02-2.28zm-18.42 13.36L15.44 13.5l-3.06-3.06L3.18.88c-.34.22-.56.62-.56 1.08v20.08c0 .5.24.92.56 1.12z"/>
+            </svg>
+            Download on Google Play
+          </a>
+          <a href="#features" class="btn-secondary">Learn More</a>
+        </div>
+        <p class="hero-trust" style="color:var(--tm);font-size:13px;">Free · One-time Pro upgrade · 100% offline</p>
+      </div>
+
+      <!-- Right: phone mockup -->
+      <div class="phone-wrap reveal" style="transition-delay:.12s">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="ps-time">6:31 AM</div>
+            <div class="ps-prayer">
+              <div class="ps-prayer-name">Fajr</div>
+              <div class="ps-prayer-time">5:24 AM</div>
+            </div>
+            <div class="ps-divider"></div>
+
+            <div class="ps-card">
+              <div class="ps-cb done"></div>
+              <div>
+                <div class="ps-habit-name">Morning Adhkar</div>
+                <div class="ps-habit-sub">1 / 1 complete</div>
+              </div>
+            </div>
+            <div class="ps-card">
+              <div class="ps-cb"></div>
+              <div>
+                <div class="ps-habit-name">Quran — 1 page</div>
+                <div class="ps-habit-sub">0 / 1 complete</div>
+              </div>
+            </div>
+            <div class="ps-card">
+              <div class="ps-cb"></div>
+              <div>
+                <div class="ps-habit-name">Sunan Fajr — 2 rak'ah</div>
+                <div class="ps-habit-sub">0 / 1 complete</div>
+              </div>
+            </div>
+
+            <div class="ps-dots">
+              <span class="act"></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ════════════════════════════════════════ -->
+<section id="features">
+  <div class="container">
+    <div class="feat-header reveal">
+      <h2 class="sec-h">Everything you need.<br>Nothing you don't.</h2>
+      <p class="sec-sub">Built around the Sunnah. Stripped of everything else.</p>
+    </div>
+    <div class="feat-grid">
+
+      <!-- 1 -->
+      <div class="feat-card reveal">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <path d="M22 7a13 13 0 1 0 0 26 11 11 0 1 1 0-26z" fill="currentColor" opacity=".9"/>
+          <path d="M31 11l1.2 3.2 3.2 1.2-3.2 1.2-1.2 3.2-1.2-3.2-3.2-1.2 3.2-1.2z" fill="currentColor"/>
+        </svg>
+        <h3 class="feat-title">Prayer-Anchored Habits</h3>
+        <p class="feat-body">Habits tied to Fajr, Dhuhr, Asr, Maghrib, Isha, and Tahajjud — not a fixed clock. Prayer times are calculated fully offline using GPS or a manually selected city, with support for all major calculation methods and madhabs.</p>
+      </div>
+
+      <!-- 2 -->
+      <div class="feat-card reveal" style="transition-delay:.06s">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <!-- open scroll / hadith icon -->
+          <rect x="7" y="11" width="26" height="20" rx="3" fill="currentColor" opacity=".15" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 14a3 3 0 0 1 3-3h20a3 3 0 0 1 3 3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M7 28a3 3 0 0 0 3 3h20a3 3 0 0 0 3-3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <line x1="12" y1="18" x2="28" y2="18" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="12" y1="22" x2="28" y2="22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="12" y1="26" x2="21" y2="26" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <h3 class="feat-title">Prophetic Habits Library</h3>
+        <p class="feat-body">30 pre-built habits directly from the Sunnah — organized across all six prayer windows. Every habit includes its hadith, source reference, and the reward the Prophet ﷺ described. Not invented. All authentic.</p>
+      </div>
+
+      <!-- 3 -->
+      <div class="feat-card reveal" style="transition-delay:.12s">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <rect x="5" y="9" width="13" height="22" rx="2" fill="currentColor" opacity=".55"/>
+          <rect x="22" y="9" width="13" height="22" rx="2" fill="currentColor" opacity=".9"/>
+          <line x1="18.5" y1="9" x2="18.5" y2="31" stroke="#0D1B2A" stroke-width="2"/>
+          <line x1="8"  y1="15" x2="15" y2="15" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="8"  y1="19" x2="15" y2="19" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="8"  y1="23" x2="15" y2="23" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="25" y1="15" x2="32" y2="15" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="25" y1="19" x2="32" y2="19" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="25" y1="23" x2="32" y2="23" stroke="#0D1B2A" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <h3 class="feat-title">Dhikr Library</h3>
+        <p class="feat-body">50 adhkar across 5 categories — Morning, Evening, After Prayer, Before Sleep, and Daily Duas. Each entry has full Arabic text, transliteration, English meaning, hadith source, and the specific reward mentioned in the hadith. Includes a Tasbeeh counter and daily Ayah strip.</p>
+      </div>
+
+      <!-- 4 -->
+      <div class="feat-card reveal" style="transition-delay:.06s">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="14" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+          <line x1="20" y1="6"  x2="20" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+          <line x1="20" y1="29" x2="20" y2="34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+          <line x1="6"  y1="20" x2="11" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+          <line x1="29" y1="20" x2="34" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+          <circle cx="20" cy="20" r="3" fill="currentColor"/>
+          <line x1="20" y1="20" x2="13" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="20" y1="20" x2="27" y2="28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".35"/>
+        </svg>
+        <h3 class="feat-title">Qibla Compass</h3>
+        <p class="feat-body">A live magnetometer-based compass that points toward the Kaaba. Works fully offline. No internet needed, no API calls — pure device sensors.</p>
+      </div>
+
+      <!-- 5 -->
+      <div class="feat-card reveal" style="transition-delay:.12s">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <line x1="20" y1="6" x2="20" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="13,16 20,23 27,16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="30" r="6" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity=".18"/>
+          <circle cx="20" cy="30" r="6" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <h3 class="feat-title">Scale Down, Never Quit</h3>
+        <p class="feat-body">On your worst days, one tap shrinks every habit to its survival minimum. Your streak stays alive. Your habit loop stays intact. Consistency over perfection.</p>
+      </div>
+
+      <!-- 6 -->
+      <div class="feat-card reveal" style="transition-delay:.18s">
+        <svg class="feat-icon" viewBox="0 0 40 40" fill="none">
+          <rect x="9" y="20" width="22" height="14" rx="3" fill="currentColor" opacity=".85"/>
+          <path d="M14 20v-6a6 6 0 1 1 12 0v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="20" cy="27" r="2.2" fill="#0D1B2A"/>
+          <line x1="20" y1="29" x2="20" y2="32" stroke="#0D1B2A" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h3 class="feat-title">100% Private &amp; Offline</h3>
+        <p class="feat-body">Everything lives on your device. No sign-up. No server. No analytics. No ads — ever. Your spiritual life is your own.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MISSION STATEMENT ════════════════════════════════ -->
+<section id="mission" style="padding:72px 0;background:#0f1e30;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="reveal" style="max-width:720px;margin:0 auto;text-align:center;">
+      <div class="sec-label">The Idea Behind Wird</div>
+      <h2 style="font-size:clamp(26px,3.5vw,38px);font-weight:700;line-height:1.2;margin-bottom:20px;">
+        Not productivity.<br>Sunnah revival.
+      </h2>
+      <p style="font-size:17px;color:var(--ts);line-height:1.8;margin-bottom:28px;">
+        The Prophet ﷺ had a daily routine. He prayed Witr before sleeping — every single night. He recited Surah al-Mulk before bed. He made dhikr after every prayer. He prayed the two rak'ahs of Fajr sunnah even while travelling. These weren't suggestions. They were his life.
+      </p>
+      <p style="font-size:17px;color:var(--ts);line-height:1.8;margin-bottom:28px;">
+        Wird exists to make that routine accessible to every Muslim. Every habit in the app has the hadith behind it. Every dhikr has its source. The name itself — <em style="color:var(--gold);">wird</em> — means a daily portion of Quran or dhikr. Something small, done every day, that brings you closer to Allah.
+      </p>
+      <p style="font-size:15px;color:var(--tm);font-style:italic;">
+        "The most beloved deeds to Allah are those done consistently, even if they are small."<br>
+        <span style="font-size:13px;margin-top:4px;display:inline-block;">— Sahih al-Bukhari 6464</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ════════════════════════════════════ -->
+<section id="how">
+  <div class="container">
+    <div class="how-header reveal">
+      <h2 class="sec-h">Simple by design.</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3 class="step-title">Set your habits</h3>
+        <p class="step-body">Add habits to any of the five prayer windows. Set a daily goal — number of reps, pages, minutes.</p>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step reveal" style="transition-delay:.1s">
+        <div class="step-num">02</div>
+        <h3 class="step-title">Follow your prayer</h3>
+        <p class="step-body">Open Wird after each prayer. See only what's due now. Check off your habits one by one.</p>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step reveal" style="transition-delay:.2s">
+        <div class="step-num">03</div>
+        <h3 class="step-title">Build consistency</h3>
+        <p class="step-body">Watch your streak grow. Scale down on hard days. Never break the chain.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WIRD PRO ═════════════════════════════════════════ -->
+<section id="pro">
+  <div class="container">
+    <div class="pro-card reveal">
+      <!-- crown -->
+      <svg class="pro-crown" viewBox="0 0 48 48" fill="none">
+        <path d="M24 6 L29 17 L41 18.5 L33 26.5 L35 38 L24 32 L13 38 L15 26.5 L7 18.5 L19 17 Z"
+              fill="currentColor" opacity=".9"
+              stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+      <div class="pro-label">Wird Pro</div>
+      <h2 class="pro-h">Build deeper habits.<br>Stay consistent.</h2>
+      <p class="pro-price">$1.99 · One-time purchase · No subscription</p>
+      <ul class="pro-list">
+        <li>
+          <svg class="pro-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Unlimited habits — free tier is capped at 3
+        </li>
+        <li>
+          <svg class="pro-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          30-day streak history — free tier shows 7 days
+        </li>
+        <li>
+          <svg class="pro-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Weekly summary &amp; insights
+        </li>
+        <li>
+          <svg class="pro-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Prayer history — 30-day salah completion log
+        </li>
+      </ul>
+      <a href="https://play.google.com/store/apps/details?id=io.wird.app" class="btn-pro">Unlock Wird Pro — $1.99</a>
+      <p class="pro-foot">Pay once. Yours forever. Restore anytime.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRIVACY ══════════════════════════════════════════ -->
+<section id="privacy">
+  <div class="container">
+    <div class="priv-header reveal">
+      <h2 class="sec-h">We built this for Allah's sake,<br>not profit.</h2>
+      <p class="sec-sub">"That changes everything about how we treat your data."</p>
+    </div>
+    <div class="priv-grid">
+      <div class="priv-card reveal">
+        <div class="priv-val">100%</div>
+        <div class="priv-lbl">Storage</div>
+        <p class="priv-desc">On-device — your data never leaves your phone.</p>
+      </div>
+      <div class="priv-card reveal" style="transition-delay:.08s">
+        <div class="priv-val">None</div>
+        <div class="priv-lbl">Tracking</div>
+        <p class="priv-desc">We collect nothing about you.</p>
+      </div>
+      <div class="priv-card reveal" style="transition-delay:.16s">
+        <div class="priv-val">Never</div>
+        <div class="priv-lbl">Ads</div>
+        <p class="priv-desc">This app will always be clean.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ QURAN VERSE ══════════════════════════════════════ -->
+<section id="verse">
+  <div class="container">
+    <div class="reveal" style="text-align:center;max-width:680px;margin:0 auto;">
+      <p class="arabic">وَاذْكُرْ رَبَّكَ فِي نَفْسِكَ تَضَرُّعًا وَخِيفَةً</p>
+      <p class="verse-tr">
+        "Remember your Lord within yourself humbly and with fear."<br>
+        — Al-A'raf, 205
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DOWNLOAD CTA ══════════════════════════════════════ -->
+<section id="download">
+  <div class="container">
+    <div class="dl-card reveal">
+      <h2 class="dl-h">Ready to build your daily wird?</h2>
+      <p class="dl-sub">Free to download. No account needed. Start today.</p>
+      <a href="https://play.google.com/store/apps/details?id=io.wird.app" class="btn-primary" style="display:inline-flex;margin:0 auto;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3.18 23.76c.26.14.56.22.88.22.4 0 .8-.11 1.14-.32l13.3-7.48-3.06-3.06-12.26 10.64zm-.72-21.56c-.08.22-.13.46-.13.72v18.16c0 .26.05.5.13.72l.06.06 10.18-10.18v-.24L2.52 2.14l-.06.06zM21.6 10.4l-2.9-1.64-3.28 3.28 3.28 3.28 2.92-1.64c.84-.48.84-1.8-.02-2.28zm-18.42 13.36L15.44 13.5l-3.06-3.06L3.18.88c-.34.22-.56.62-.56 1.08v20.08c0 .5.24.92.56 1.12z"/>
+        </svg>
+        Download on Google Play
+      </a>
+      <p class="dl-meta">io.wird.app · Version 1.0.0</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="foot-main">
+      <div>
+        <div class="foot-brand">Wird</div>
+        <div class="foot-tag">Your habits, anchored to prayer.</div>
+      </div>
+      <div class="foot-links">
+        <a href="https://sites.google.com/view/wirdprivacypolicy">Privacy Policy</a>
+        <a href="#features">About</a>
+        <a href="https://play.google.com/store/apps/details?id=io.wird.app">Download</a>
+      </div>
+      <div class="foot-r">Made with love for the Ummah</div>
+    </div>
+  </div>
+  <div class="foot-bar">
+    <div class="container">© 2025 Wird · io.wird.app</div>
+  </div>
+</footer>
+
+<script>
+  // ── Scroll reveal ──────────────────────────────────────
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Hero elements in viewport on load — reveal immediately
+  window.addEventListener('load', () => {
+    document.querySelectorAll('#hero .reveal').forEach((el, i) => {
+      setTimeout(() => el.classList.add('in'), i * 120);
+    });
+  });
+
+  // ── Hamburger / mobile menu ────────────────────────────
+  const ham  = document.getElementById('ham');
+  const menu = document.getElementById('mobile-menu');
+
+  ham.addEventListener('click', () => {
+    const open = menu.classList.toggle('open');
+    ham.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  document.querySelectorAll('.m-link').forEach(a => {
+    a.addEventListener('click', () => {
+      menu.classList.remove('open');
+      ham.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+</script>
+</body>
+</html>
