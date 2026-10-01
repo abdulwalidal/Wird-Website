@@ -14,7 +14,6 @@ Available now on [Google Play](https://play.google.com/store/apps/details?id=io.
 
 ![Features](assets/features.png)
 
-![Pro](assets/pro.png)
 
 ![Privacy](assets/privacy.png)
 
